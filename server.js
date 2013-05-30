@@ -1,22 +1,12 @@
-var http = require('http');
-var path = require('path');
-var pages = [
-    {route: '', output: 'Woohoo!'},
-    {route: 'about', output: 'A simple routing with Node example'},
-    {route: 'another page', output: function() {return 'Here\'s '+this.route;}},
-];
+var express =  require("express");
+var app = express();
+app.use(express.logger());
 
-http.createServer(function(request, response) {
-    var lookup = path.basename(decodeURI(request.url));
+app.get('/', function(request, response) {
+    response.send('Hello World!');
+});
 
-    pages.forEach(function(page) {
-        if (page.route === lookup) {
-            response.writeHead(200, {'Content-Type': 'text/html'});
-            response.end(typeof page.output === 'function' ? page.output() : page.output);
-        }
-    });
-    if (!response.finished) {
-        response.writeHead(404);
-        response.end('Page Not Found!');
-    }
-}).listen(5000);
+var port = process.env.PORT || 5000;
+app.listen(port, function() {
+    console.log("Listening on " + port);
+});
