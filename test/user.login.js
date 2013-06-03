@@ -1,6 +1,6 @@
 var user = require('../lib/user'),
     userStore = require('../lib/userStore'),
-    encrypt = require('../lib/encrypt'),
+    bcrypt = require('bcrypt'),
     assert = require('assert'),
     sinon = require('sinon');
 
@@ -17,14 +17,14 @@ describe('user', function() {
         afterEach(function() {
             res.send.reset();
             userStore.getUserByUsername.reset();
-            encrypt.password.reset();
+            bcrypt.hashSync.reset();
         });
 
         describe('when submitting valid credentials, it', function() {
 
             beforeEach(function() {
                 userStore.getUserByUsername = sinon.stub().returns({ username: 'profile-username', passwordSalt: 'password-salt', password: 'encrypted-password'});
-                encrypt.password = sinon.stub().returns('encrypted-password');
+                bcrypt.hashSync = sinon.stub().returns('encrypted-password');
                 req.body = { username: 'valid-username', password: 'valid-password'};
                 user.login(req, res)
             });
@@ -34,7 +34,7 @@ describe('user', function() {
             });
 
             it('encrypts submitted password using user salt value', function() {
-                assert(encrypt.password.calledWith('valid-password', 'password-salt'));
+                assert(bcrypt.hashSync.calledWith('valid-password', 'password-salt'));
             });
 
             it('assigns the "profile" username to session', function() {
@@ -50,7 +50,7 @@ describe('user', function() {
 
             beforeEach(function() {
                 userStore.getUserByUsername = sinon.stub().returns({ username: 'valid-username', passwordSalt: 'password-salt', password: 'encrypted-password'});
-                encrypt.password = sinon.stub().returns('invalid-encrypted-password');
+                bcrypt.hashSync = sinon.stub().returns('invalid-encrypted-password');
                 req.body = { username: 'valid-username', password: 'invalid-password'};
                 user.login(req, res);
             });
@@ -60,7 +60,7 @@ describe('user', function() {
             });
 
             it('encrypts submitted password using user salt value', function() {
-                assert(encrypt.password.calledWith('invalid-password', 'password-salt'));
+                assert(bcrypt.hashSync.calledWith('invalid-password', 'password-salt'));
             });
 
             it('does not assign values to session', function() {
@@ -75,7 +75,7 @@ describe('user', function() {
         describe('when submitting INVALID username', function() {
             beforeEach(function() {
                 userStore.getUserByUsername = sinon.stub().returns(null);
-                encrypt.password = sinon.spy();
+                bcrypt.hashSync = sinon.spy();
                 req.body = { username: 'invalid-username'};
                 user.login(req, res);
             });
@@ -85,7 +85,7 @@ describe('user', function() {
             });
 
             it('encrypts submitted password using user salt value', function() {
-                assert(encrypt.password.notCalled);
+                assert(bcrypt.hashSync.notCalled);
             });
 
             it('does not assign values to session', function() {
@@ -100,7 +100,7 @@ describe('user', function() {
         describe('when user already authenticated', function() {
             beforeEach(function() {
                 userStore.getUserByUsername = sinon.spy();
-                encrypt.password = sinon.spy();
+                bcrypt.hashSync = sinon.spy();
                 req.session = {username: 'already-authenticated'};
                 req.body = { username: 'valid-username', password: 'valid-password'};
                 user.login(req, res);
@@ -111,7 +111,7 @@ describe('user', function() {
             });
 
             it('does not encrypt submitted password using user salt value', function() {
-                assert(encrypt.password.notCalled);
+                assert(bcrypt.hashSync.notCalled);
             });
 
             it('does not assign values to session', function() {
