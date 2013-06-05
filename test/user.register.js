@@ -48,7 +48,6 @@ describe('user', function() {
             it('save user profile', function() {
                 assert(userStore.save.calledWith({
                     username: 'new-user',
-                    passwordSalt: 'new-salt',
                     password: 'new-encrypted-password'
                 }));
             });
@@ -70,7 +69,6 @@ describe('user', function() {
             it('save the submitted data', function() {
                 assert(userStore.save.calledWith({
                     username: 'submitted-username',
-                    passwordSalt: 'salt-for-submitted-password',
                     password: 'encrypted-password-for-submitted-password'
                 }));
             });
