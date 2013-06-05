@@ -17,14 +17,14 @@ describe('user', function() {
         afterEach(function() {
             res.send.reset();
             userStore.getUserByUsername.reset();
-            bcrypt.hashSync.reset();
+            bcrypt.compareSync.reset();
         });
 
         describe('when submitting valid credentials, it', function() {
 
             beforeEach(function() {
-                userStore.getUserByUsername = sinon.stub().returns({ username: 'profile-username', passwordSalt: 'password-salt', password: 'encrypted-password'});
-                bcrypt.hashSync = sinon.stub().returns('encrypted-password');
+                userStore.getUserByUsername = sinon.stub().returns({ username: 'profile-username', passwordSalt: 'password-salt', password: 'hashed-password'});
+                bcrypt.compareSync = sinon.stub().returns(true);
                 req.body = { username: 'valid-username', password: 'valid-password'};
                 user.login(req, res)
             });
@@ -33,8 +33,8 @@ describe('user', function() {
                 assert(userStore.getUserByUsername.calledWith('valid-username'));
             });
 
-            it('encrypts submitted password using user salt value', function() {
-                assert(bcrypt.hashSync.calledWith('valid-password', 'password-salt'));
+            it('compares submitted password with hashed password', function() {
+                assert(bcrypt.compareSync.calledWith('valid-password', 'hashed-password'));
             });
 
             it('assigns the "profile" username to session', function() {
@@ -49,8 +49,8 @@ describe('user', function() {
         describe('when submitting an INVALID password, it', function() {
 
             beforeEach(function() {
-                userStore.getUserByUsername = sinon.stub().returns({ username: 'valid-username', passwordSalt: 'password-salt', password: 'encrypted-password'});
-                bcrypt.hashSync = sinon.stub().returns('invalid-encrypted-password');
+                userStore.getUserByUsername = sinon.stub().returns({ username: 'valid-username', passwordSalt: 'password-salt', password: 'hashed-password'});
+                bcrypt.compareSync = sinon.stub().returns(false);
                 req.body = { username: 'valid-username', password: 'invalid-password'};
                 user.login(req, res);
             });
@@ -59,8 +59,8 @@ describe('user', function() {
                 assert(userStore.getUserByUsername.calledWith('valid-username'));
             });
 
-            it('encrypts submitted password using user salt value', function() {
-                assert(bcrypt.hashSync.calledWith('invalid-password', 'password-salt'));
+            it('compares submitted password with hashed password', function() {
+                assert(bcrypt.compareSync.calledWith('invalid-password', 'hashed-password'));
             });
 
             it('does not assign values to session', function() {
