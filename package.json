@@ -5,6 +5,9 @@
         "bcrypt": "0.7.x",
         "express": "3.1.x"
     },
+    "devDependencies": {
+        "sinon": "1.7.x"
+    },
     "engines": {
         "node": "0.10.x",
         "npm": "1.2.x"

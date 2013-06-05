@@ -1,6 +1,6 @@
 var user = require('../lib/user'),
     userStore = require('../lib/userStore'),
-    bcrypt = require('bcrypt'),
+    bcrypt = require('bCrypt'),
     assert = require('assert'),
     sinon = require('sinon');
 
