@@ -2,6 +2,7 @@
     "name": "pf-server",
     "version": "0.0.1",
     "dependencies": {
+        "bcrypt": "0.7.x",
         "express": "3.1.x"
     },
     "engines": {

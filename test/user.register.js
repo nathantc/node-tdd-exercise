@@ -13,6 +13,7 @@ describe('user', function() {
 
         beforeEach(function() {
             userRule.validateNewUser = sinon.stub();
+            userStore.getUserByUsername = sinon.stub().returns(null);
             userStore.save = sinon.spy();
             res.send = sinon.spy();
         });
@@ -85,6 +86,37 @@ describe('user', function() {
             it('return error code and message', function() {
                 assert(res.send.calledWith('Invalid password', 403));
             });
-        })
+
+            it('does not call password methods', function() {
+                assert(bcrypt.genSaltSync.notCalled);
+                assert(bcrypt.hashSync.notCalled);
+            });
+
+            it('does not save user data', function() {
+                assert(userStore.save.notCalled);
+            })
+        });
+
+        describe('when username already exists', function() {
+
+            beforeEach(function() {
+                req.body = {username: 'existing-user', password: 'new-password'};
+                userStore.getUserByUsername.returns({username: 'existing-user'});
+                user.register(req, res);
+            });
+
+            it('return error code and message', function() {
+                assert(res.send.calledWith('Username existing-user is not available.', 403));
+            });
+
+            it('does not call password methods', function() {
+                assert(bcrypt.genSaltSync.notCalled);
+                assert(bcrypt.hashSync.notCalled);
+            });
+
+            it('does not save user data', function() {
+                assert(userStore.save.notCalled);
+            })
+        });
     });
 });

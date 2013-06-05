@@ -46,7 +46,7 @@ describe('user', function() {
             })
         });
 
-        describe('when submitting INVALID password, it', function() {
+        describe('when submitting an INVALID password, it', function() {
 
             beforeEach(function() {
                 userStore.getUserByUsername = sinon.stub().returns({ username: 'valid-username', passwordSalt: 'password-salt', password: 'encrypted-password'});
