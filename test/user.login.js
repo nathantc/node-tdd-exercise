@@ -41,7 +41,7 @@ describe('user.login:', function() {
         });
 
         it('assigns the "profile" username to session', function() {
-            assert.equal('profile-username', req.session.username);
+            assert.equal('profile-username', req.session.user);
         });
 
         it('returns successful 202 status code', function() {
@@ -67,7 +67,7 @@ describe('user.login:', function() {
         });
 
         it('does not assign values to session', function() {
-            assert.equal(undefined, req.session.username);
+            assert.equal(undefined, req.session.user);
         });
 
         it('returns failed error code 403', function() {
@@ -87,12 +87,12 @@ describe('user.login:', function() {
             assert(userStore.getUserByUsername.calledWith('invalid-username'));
         });
 
-        it('encrypts submitted password using user salt value', function() {
+        it('does not encrypt password', function() {
             assert(bcrypt.hashSync.notCalled);
         });
 
         it('does not assign values to session', function() {
-            assert.equal(undefined, req.session.username);
+            assert.equal(undefined, req.session.user);
         });
 
         it('returns failed error code 403', function() {
@@ -103,7 +103,7 @@ describe('user.login:', function() {
     describe('when user already authenticated', function() {
         beforeEach(function() {
             bcrypt.hashSync = sinon.spy();
-            req.session = {username: 'already-authenticated'};
+            req.session = {user: 'already-authenticated'};
             req.body = { username: 'valid-username', password: 'valid-password'};
             user.login(req, res);
         });
@@ -117,7 +117,7 @@ describe('user.login:', function() {
         });
 
         it('does not assign values to session', function() {
-            assert.equal('already-authenticated', req.session.username);
+            assert.equal('already-authenticated', req.session.user);
         });
 
         it('returns failed error code 409', function() {

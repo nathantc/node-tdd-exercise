@@ -34,8 +34,8 @@ describe('user.register:', function() {
             assert(userRule.validateNewUser.calledWith({username: 'new-user', password: 'new-password'}));
         });
 
-        it('create new salt value for user', function() {
-            assert(bcrypt.genSaltSync.calledWith(10));
+        it('create new salt value for password', function() {
+            assert(bcrypt.genSaltSync.called);
         });
 
         it('encrypt password with salt value', function() {
