@@ -1,5 +1,5 @@
 var user = require('../lib/user'),
-    userStore = require('../lib/userStore'),
+    User = require('../lib/userSchema').User,
     bcrypt = require('bcrypt'),
     assert = require('assert'),
     sinon = require('sinon');
@@ -9,9 +9,8 @@ describe('user.update', function() {
     var req = { }, res = {};
 
     beforeEach(function() {
-        userStore.getUserByUsername = sinon.stub();
-        userStore.update = sinon.stub();
-        userStore.update.callsArg(2);
+        User.findOne = sinon.stub();
+        User.findOneAndUpdate = sinon.stub();
         bcrypt.genSaltSync = sinon.stub();
         bcrypt.hashSync = sinon.stub();
         bcrypt.compareSync = sinon.stub();
@@ -21,11 +20,16 @@ describe('user.update', function() {
 
     describe('When submitting new password,', function() {
 
+        var error = undefined,
+            storedUser = {'username':'current-user', password:'current-hashed-password'},
+            updatedUser = {'username':'current-user', password:'new-hashed-password'};
+
         beforeEach(function() {
-            userStore.getUserByUsername.callsArgWith(1, {password: 'hashed-password'});
+            User.findOne.callsArgWith(1, error, storedUser);
+            User.findOneAndUpdate.callsArgWith(1, error, updatedUser);
             bcrypt.compareSync.returns(true);
             bcrypt.genSaltSync.returns('new-salt');
-            bcrypt.hashSync.returns('new-encrypted-password');
+            bcrypt.hashSync.returns('new-hashed-password');
 
             req.session = {user: 'current-user'};
             req.body = {newPassword: 'new-password', currentPassword: 'current-password'};
@@ -33,7 +37,7 @@ describe('user.update', function() {
         });
 
         it('verifies the current password', function() {
-            assert(bcrypt.compareSync.calledWith('current-password', 'hashed-password'));
+            assert(bcrypt.compareSync.calledWith('current-password', 'current-hashed-password'));
         });
 
         it('create new hashed password', function() {
@@ -42,7 +46,7 @@ describe('user.update', function() {
         });
 
         it('saves new password to user', function() {
-            assert(userStore.update.calledWith('current-user', 'new-encrypted-password'));
+            assert(User.findOneAndUpdate.calledWith({username: 'current-user', password: 'new-hashed-password'}));
         });
 
         it('returns a 202 response', function() {
@@ -53,7 +57,7 @@ describe('user.update', function() {
     describe('When submitting invalid current password,', function() {
 
         beforeEach(function() {
-            userStore.getUserByUsername.callsArgWith(1, {password: 'hashed-password'});
+            User.findOne.callsArgWith(1, undefined, {password: 'hashed-password'});
             bcrypt.compareSync.returns(false);
 
             req.session = {username: 'current-user'};
@@ -71,7 +75,7 @@ describe('user.update', function() {
         });
 
         it('does not save new password to user', function() {
-            assert(userStore.update.notCalled);
+            assert(User.findOneAndUpdate.notCalled);
         });
 
         it('returns a 403 response', function() {

@@ -1,5 +1,5 @@
 var user = require('../lib/user'),
-    userStore = require('../lib/userStore'),
+    User = require('../lib/userSchema').User,
     bcrypt = require('bcrypt'),
     assert = require('assert'),
     sinon = require('sinon');
@@ -12,20 +12,22 @@ describe('user.login:', function() {
         res = { send: function() {}};
         res.send = sinon.spy();
 
-        userStore.getUserByUsername = sinon.stub();
+        User.findOne = sinon.stub();
         bcrypt.compareSync = sinon.stub();
     });
 
-    afterEach(function() {
-        res.send.reset();
-        userStore.getUserByUsername.reset();
-        bcrypt.compareSync.reset();
-    });
 
     describe('when submitting valid credentials, it', function() {
 
+        var storedUser = {
+            username: 'profile-username',
+            password: 'hashed-password'
+            },
+            error = undefined;
+
         beforeEach(function() {
-            userStore.getUserByUsername.callsArgWith(1, { username: 'profile-username', passwordSalt: 'password-salt', password: 'hashed-password'});
+
+            User.findOne.callsArgWith(1, error, storedUser);
             bcrypt.compareSync.returns(true);
 
             req.body = { username: 'valid-username', password: 'valid-password'};
@@ -33,7 +35,7 @@ describe('user.login:', function() {
         });
 
         it('retrieves user information for submitted username', function() {
-            assert(userStore.getUserByUsername.calledWith('valid-username'));
+            assert(User.findOne.calledWith({username: 'valid-username'}));
         });
 
         it('compares submitted password with hashed password', function() {
@@ -51,19 +53,17 @@ describe('user.login:', function() {
 
     describe('when submitting an INVALID password, it', function() {
 
+        var storedUser = {
+            username: 'valid-username',
+            password: 'hashed-password'
+            },
+            error = undefined;
+
         beforeEach(function() {
-            userStore.getUserByUsername.callsArgWith(1,{ username: 'valid-username', passwordSalt: 'password-salt', password: 'hashed-password'});
+            User.findOne.callsArgWith(1, error, storedUser);
             bcrypt.compareSync.returns(false);
             req.body = { username: 'valid-username', password: 'invalid-password'};
             user.login(req, res);
-        });
-
-        it('retrieves user information for submitted username', function() {
-            assert(userStore.getUserByUsername.calledWith('valid-username'));
-        });
-
-        it('compares submitted password with hashed password', function() {
-            assert(bcrypt.compareSync.calledWith('invalid-password', 'hashed-password'));
         });
 
         it('does not assign values to session', function() {
@@ -76,19 +76,15 @@ describe('user.login:', function() {
     });
 
     describe('when submitting INVALID username', function() {
+
+        var storedUser = undefined,
+            error = undefined;
+
         beforeEach(function() {
-            userStore.getUserByUsername.callsArgWith(1, null);
+            User.findOne.callsArgWith(1, error, storedUser);
             bcrypt.hashSync = sinon.spy();
             req.body = { username: 'invalid-username'};
             user.login(req, res);
-        });
-
-        it('retrieves user information for submitted username', function() {
-            assert(userStore.getUserByUsername.calledWith('invalid-username'));
-        });
-
-        it('does not encrypt password', function() {
-            assert(bcrypt.hashSync.notCalled);
         });
 
         it('does not assign values to session', function() {
@@ -100,6 +96,22 @@ describe('user.login:', function() {
         });
     });
 
+    describe('when User.findOne returns error', function() {
+
+        var storedUser = undefined,
+            error = 'error thrown by findOne';
+
+        beforeEach(function() {
+            User.findOne.callsArgWith(1, error, storedUser);
+            req.body = { username: 'username'};
+            user.login(req, res);
+        });
+
+        it('returns failed error code 500', function() {
+            assert(res.send.calledWith('Error occurred retrieving user profile: error thrown by findOne', 500))
+        })
+    });
+
     describe('when user already authenticated', function() {
         beforeEach(function() {
             bcrypt.hashSync = sinon.spy();
@@ -109,7 +121,7 @@ describe('user.login:', function() {
         });
 
         it('does not retrieve user information for submitted username', function() {
-            assert(userStore.getUserByUsername.notCalled);
+            assert(User.findOne.notCalled);
         });
 
         it('does not encrypt submitted password using user salt value', function() {
@@ -124,4 +136,5 @@ describe('user.login:', function() {
             assert(res.send.calledWith('User is already authenticated. Logout before attempting another login.', 409));
         });
     });
+
 });
