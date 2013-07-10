@@ -9,29 +9,40 @@ describe('user.update', function() {
     var req = { }, res = {};
 
     beforeEach(function() {
-        User.findOne = sinon.stub();
-        User.findOneAndUpdate = sinon.stub();
-        bcrypt.genSaltSync = sinon.stub();
-        bcrypt.hashSync = sinon.stub();
-        bcrypt.compareSync = sinon.stub();
+        sinon.stub(User, 'findOne');
+        sinon.stub(User, 'findOneAndUpdate');
+        sinon.stub(bcrypt, 'genSaltSync');
+        sinon.stub(bcrypt, 'hashSync');
+        sinon.stub(bcrypt, 'compareSync');
 
         res.send = sinon.spy();
     });
 
+    afterEach(function() {
+        User.findOne.restore();
+        User.findOneAndUpdate.restore();
+
+        bcrypt.genSaltSync.restore();
+        bcrypt.hashSync.restore();
+        bcrypt.compareSync.restore();
+
+        res.send.reset();
+    })
+
     describe('When submitting new password,', function() {
 
         var error = undefined,
-            storedUser = {'username':'current-user', password:'current-hashed-password'},
-            updatedUser = {'username':'current-user', password:'new-hashed-password'};
+            storedUser = {_id:'current-user-id', password:'current-hashed-password'},
+            updatedUser = {_id:'current-user-id', password:'new-hashed-password'};
 
         beforeEach(function() {
             User.findOne.callsArgWith(1, error, storedUser);
-            User.findOneAndUpdate.callsArgWith(1, error, updatedUser);
+            User.findOneAndUpdate.callsArgWith(2, error, updatedUser);
             bcrypt.compareSync.returns(true);
             bcrypt.genSaltSync.returns('new-salt');
             bcrypt.hashSync.returns('new-hashed-password');
 
-            req.session = {user: 'current-user'};
+            req.session = {userId: 'current-user-id'};
             req.body = {newPassword: 'new-password', currentPassword: 'current-password'};
             user.update(req, res);
         });
@@ -46,11 +57,11 @@ describe('user.update', function() {
         });
 
         it('saves new password to user', function() {
-            assert(User.findOneAndUpdate.calledWith({username: 'current-user', password: 'new-hashed-password'}));
+            assert(User.findOneAndUpdate.calledWith({_id: 'current-user-id'}, {password: 'new-hashed-password'}));
         });
 
-        it('returns a 202 response', function() {
-            assert(res.send.calledWith(202));
+        it('returns a 204 response', function() {
+            assert(res.send.calledWith(204));
         })
     });
 

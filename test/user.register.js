@@ -11,13 +11,22 @@ describe('user.register:', function() {
         userModel = { save: function() {} };
 
     beforeEach(function() {
-        User.newUser = sinon.stub();
-        User.findOne = sinon.stub();
-        User.validPassword = sinon.stub().returns(true);
+        User.newUser = sinon.stub(User, 'newUser');
+        User.findOne = sinon.stub(User, 'findOne');
+        User.validPassword = sinon.stub(User, 'validPassword').returns(true);
 
-        bcrypt.genSaltSync = sinon.stub();
-        bcrypt.hashSync = sinon.stub();
+        bcrypt.genSaltSync = sinon.stub(bcrypt, 'genSaltSync');
+        bcrypt.hashSync = sinon.stub(bcrypt, 'hashSync');
         res.send = sinon.spy();
+    });
+
+    afterEach(function() {
+        User.newUser.restore();
+        User.findOne.restore();
+        User.validPassword.restore();
+
+        bcrypt.genSaltSync.restore();
+        bcrypt.hashSync.restore();
     });
 
     describe('when submitting valid data,', function() {
@@ -60,8 +69,8 @@ describe('user.register:', function() {
             assert(userModel.save.called);
         });
 
-        it('return success status code 202', function() {
-            assert(res.send.calledWith(202));
+        it('return success status code 204', function() {
+            assert(res.send.calledWith(204));
         });
     });
 

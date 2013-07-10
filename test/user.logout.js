@@ -17,8 +17,8 @@ describe('user', function() {
             assert.equal(null, req.session);
         });
 
-        it('returns status code 202', function() {
-            assert(res.send.calledWith(202));
+        it('returns status code 204', function() {
+            assert(res.send.calledWith(204));
         });
     });
 });

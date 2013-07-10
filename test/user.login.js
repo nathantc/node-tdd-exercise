@@ -12,14 +12,22 @@ describe('user.login:', function() {
         res = { send: function() {}};
         res.send = sinon.spy();
 
-        User.findOne = sinon.stub();
-        bcrypt.compareSync = sinon.stub();
+        sinon.stub(User, 'findOne');
+        sinon.stub(bcrypt, 'compareSync');
+        sinon.spy(bcrypt, 'hashSync');
     });
+
+    afterEach(function() {
+        User.findOne.restore();
+        bcrypt.compareSync.restore();
+        bcrypt.hashSync.restore();
+    })
 
 
     describe('when submitting valid credentials, it', function() {
 
         var storedUser = {
+            _id: 'user-id',
             username: 'profile-username',
             password: 'hashed-password'
             },
@@ -42,12 +50,12 @@ describe('user.login:', function() {
             assert(bcrypt.compareSync.calledWith('valid-password', 'hashed-password'));
         });
 
-        it('assigns the "profile" username to session', function() {
-            assert.equal('profile-username', req.session.user);
+        it('assigns the userId to session', function() {
+            assert.equal('user-id', req.session.userId);
         });
 
-        it('returns successful 202 status code', function() {
-            assert(res.send.calledWith(202));
+        it('returns successful 204 status code', function() {
+            assert(res.send.calledWith(204));
         })
     });
 
@@ -66,8 +74,8 @@ describe('user.login:', function() {
             user.login(req, res);
         });
 
-        it('does not assign values to session', function() {
-            assert.equal(undefined, req.session.user);
+        it('does not assign userId to session', function() {
+            assert.equal(undefined, req.session.userId);
         });
 
         it('returns failed error code 403', function() {
@@ -82,13 +90,12 @@ describe('user.login:', function() {
 
         beforeEach(function() {
             User.findOne.callsArgWith(1, error, storedUser);
-            bcrypt.hashSync = sinon.spy();
             req.body = { username: 'invalid-username'};
             user.login(req, res);
         });
 
-        it('does not assign values to session', function() {
-            assert.equal(undefined, req.session.user);
+        it('does not assign userId to session', function() {
+            assert.equal(undefined, req.session.userId);
         });
 
         it('returns failed error code 403', function() {
@@ -114,8 +121,7 @@ describe('user.login:', function() {
 
     describe('when user already authenticated', function() {
         beforeEach(function() {
-            bcrypt.hashSync = sinon.spy();
-            req.session = {user: 'already-authenticated'};
+            req.session = {userId: 'already-authenticated'};
             req.body = { username: 'valid-username', password: 'valid-password'};
             user.login(req, res);
         });
@@ -129,7 +135,7 @@ describe('user.login:', function() {
         });
 
         it('does not assign values to session', function() {
-            assert.equal('already-authenticated', req.session.user);
+            assert.equal('already-authenticated', req.session.userId);
         });
 
         it('returns failed error code 409', function() {

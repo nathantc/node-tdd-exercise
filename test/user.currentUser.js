@@ -15,17 +15,18 @@ describe('user', function() {
         }
 
         it('returns username value of session object', function() {
-            req.session = {user: 'current-user'};
+            req.session = {userId: 'current-user'};
+            testResponseJson({userId: 'current-user'});
         });
 
         it('does not return other session values', function() {
-            req.session = {user: 'current user', private: 'private data'};
-            testResponseJson({user: 'current user'});
+            req.session = {userId: 'current user', private: 'private data'};
+            testResponseJson({userId: 'current user'});
         });
 
         it('returns "guest" username when session has not been authenticated', function() {
             req.session = {};
-            testResponseJson({user: 'guest'});
+            testResponseJson({userId: 'guest'});
         })
     });
 });
