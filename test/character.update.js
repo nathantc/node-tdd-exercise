@@ -33,7 +33,7 @@ describe('character.update: ', function() {
 
             sinon.stub(Character, 'findOneAndUpdate').callsArgWith(2, error, postUpdateCharacter);
 
-            character.update(req, res);
+            character.edit(req, res);
         });
 
         afterEach(function() {
